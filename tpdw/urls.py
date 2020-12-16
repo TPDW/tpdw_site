@@ -15,8 +15,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
+from django.shortcuts import redirect
 
 urlpatterns = [
-    path('admin/', admin.site.urls, name='admin'),
+    path('administrator/', admin.site.urls, name='administrator'),
     path('', include('mainSite.urls'), name='index'),
 ]

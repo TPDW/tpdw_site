@@ -1,6 +1,8 @@
 import datetime
+import uuid
 
 from django.db import models
+from django.db.models.functions import Cast
 
 # Create your models here.
 
@@ -27,11 +29,17 @@ class A_level(Qualification):
     grade = models.CharField(max_length=2, choices=grade_choices)
 
 class Thesis(models.Model):
+    uuid = models.UUIDField( default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100)
-    url = models.URLField(max_length=200)
+    #str_uuid = Cast(uuid,output_field=models.TextField)
+    #upload_path = 'theses/{}/'.format(uuid)
+    #upload_path = 'theses/'
+    def upload_path(instance,filename):
+        return f'theses/{instance.uuid}/{filename}'
+    file = models.FileField(upload_to=upload_path,blank=True,null=True)
 
 class Degree(Qualification):
     title_choices = [('MSc','MSc'),('BA','BA')]
     title = models.CharField(max_length=50, choices=title_choices)
     university = models.CharField(max_length=50)
-    thesis = models.ForeignKey(Thesis, on_delete=models.CASCADE)
+    thesis = models.OneToOneField(Thesis, on_delete=models.CASCADE,blank=True,null=True)

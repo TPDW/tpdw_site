@@ -1,0 +1,28 @@
+
+{% if Degree_list %}
+  {% for degree in Degree_list %}
+     {{ degree.title}} {{degree.subject}}
+     {{degree.thesis.title}}
+     {#{degree.thesis.file}#}
+     {#figure out how to extract the last bit from the file parameter#}
+     <a href={% url 'thesis' degree.thesis.uuid|stringformat:"s"  %}>thesis_link</a>
+  {% endfor %}
+{% endif %}
+
+{% if A_level_list %}
+<h1> A Levels </h1>
+<ul>
+  {% for A_level in A_level_list %}
+    <li> {{ A_level.subject }} : {{ A_level.grade }} </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if GCSE_list %}
+<h1> GCSEs </h1>
+<ul>
+  {% for gcse in GCSE_list %}
+    <li> {{ gcse.subject }} : {{ gcse.grade }} </li>
+  {% endfor %}
+</ul>
+{% endif %}

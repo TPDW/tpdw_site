@@ -18,6 +18,6 @@ from django.urls import path,include
 from django.shortcuts import redirect
 
 urlpatterns = [
-    path('administrator/', admin.site.urls, name='administrator'),
+    path('admin/', admin.site.urls, name='admin'),
     path('', include('mainSite.urls'), name='index'),
 ]

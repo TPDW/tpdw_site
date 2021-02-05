@@ -43,3 +43,14 @@ class Degree(Qualification):
     title = models.CharField(max_length=50, choices=title_choices)
     university = models.CharField(max_length=50)
     thesis = models.OneToOneField(Thesis, on_delete=models.CASCADE,blank=True,null=True)
+
+class Coursera_Course(Qualification):
+    verification_link = models.TextField(null=True)
+    date_acquired = models.DateField(null=True)
+    grade = models.CharField(max_length=50,null=True)
+
+
+
+class FAQ_Question_Answer(models.Model):
+    Question = models.CharField(max_length=100)
+    Answer = models.TextField()

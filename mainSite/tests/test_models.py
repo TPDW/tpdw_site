@@ -1,7 +1,7 @@
 import os
 from django.test import TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
-from .models import GCSE, A_level, Degree, Thesis
+from mainSite.models import GCSE, A_level, Degree, Thesis, FAQ_Question_Answer
 # Create your tests here.
 
 class GCSETestCase(TestCase):
@@ -57,3 +57,13 @@ class ThesisTestCase(TestCase):
     def test_thesis(self):
         thesis = Thesis.objects.get(title='Test Title')
         self.assertEqual(thesis.title,'Test Title')
+
+class FAQ_Question_AnswerTestCase(TestCase):
+    def setUp(self):
+        question = "What's up?"
+        answer = "The sky."
+        FAQ_QA = FAQ_Question_Answer.objects.create(Question=question,Answer=answer)
+
+    def test_FAQ(self):
+        FAQ_QA = FAQ_Question_Answer.objects.get(Question="What's up?")
+        self.assertEqual(FAQ_QA.Answer, "The sky.")

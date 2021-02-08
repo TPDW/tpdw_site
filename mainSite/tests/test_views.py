@@ -1,0 +1,96 @@
+import os
+
+from django.test import TestCase
+from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
+
+from mainSite.models import GCSE, A_level, Degree, Thesis, FAQ_Question_Answer
+
+class QualificationsViewTest(TestCase):
+    def setUp(self):
+        A_level.objects.create(subject='Chemistry',grade='A')
+        A_level.objects.create(subject='Mathematics',grade='A*')
+        GCSE.objects.create(subject='Physics', grade='A*')
+        GCSE.objects.create(subject='English Language', grade='B')
+
+    def test_view_exists_at_correct_url(self):
+        response = self.client.get('/qualifications/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_accessible_by_name(self):
+        response = self.client.get(reverse('qualifications'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_uses_correct_template(self):
+        response = self.client.get(reverse('qualifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response,'mainSite/qualifications.html')
+
+    def test_all_qualifications_listed(self):
+        response = self.client.get(reverse('qualifications'))
+        self.assertEqual(response.status_code, 200)
+        for subject in ['Physics','Chemistry','English Language','Mathematics']:
+            self.assertContains(response,subject)
+
+    def test_absent_qualifications_not_listed(self):
+        response = self.client.get(reverse('qualifications'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response,'Degree')
+
+
+class FAQ_view_test(TestCase):
+    def setUp(self):
+        FAQ_Question_Answer.objects.create(Question='What on Earth?', Answer="It's cheese.")
+
+    def test_view_exists_at_correct_url(self):
+        response = self.client.get('/FAQ/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_accessible_by_name(self):
+        response = self.client.get(reverse('FAQ'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_uses_correct_template(self):
+        response = self.client.get(reverse('FAQ'))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response,'mainSite/FAQ.html')
+
+    def test_question_listed(self):
+        response = self.client.get(reverse('FAQ'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response,'What on Earth?')
+
+class CV_view_test(TestCase):
+    def test_view_exists_at_correct_url(self):
+        response = self.client.get('/CV/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_accessible_by_name(self):
+        response = self.client.get(reverse('CV'))
+        self.assertEqual(response.status_code, 200)
+
+class thesis_view_test(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        file = SimpleUploadedFile('thesis.txt',b'test thesis content')
+        thesis = Thesis.objects.create(title='Test Title',file = file)
+
+    @classmethod
+    def tearDownClass(cls):
+        thesis = Thesis.objects.get(title='Test Title')
+        os.remove(f'{os.getcwd()}\\theses\\{thesis.uuid}\\thesis.txt')
+        os.rmdir(f'{os.getcwd()}\\theses\\{thesis.uuid}')
+        super().tearDownClass()
+
+    def test_view_exists_at_correct_url(self):
+        thesis = Thesis.objects.get(title='Test Title')
+        url = f'/theses/{thesis.uuid}'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        response.close()
+
+    def test_view_accessible_by_name(self):
+        thesis = Thesis.objects.get(title='Test Title')
+        response = self.client.get(reverse('thesis',args=[f'{thesis.uuid}']))
+        self.assertEqual(response.status_code, 200)
+        response.close()

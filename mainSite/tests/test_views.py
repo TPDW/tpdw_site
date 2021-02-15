@@ -1,6 +1,6 @@
 import os
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.conf import settings
@@ -12,6 +12,10 @@ class QualificationsViewTest(TestCase):
         A_level.objects.create(subject='Mathematics',grade='A*')
         GCSE.objects.create(subject='Physics', grade='A*')
         GCSE.objects.create(subject='English Language', grade='B')
+
+        settings_manager = override_settings(SECURE_SSL_REDIRECT=False)
+        settings_manager.enable()
+        self.addCleanup(settings_manager.disable)
 
     def test_view_exists_at_correct_url(self):
         response = self.client.get('/qualifications/')
@@ -42,6 +46,10 @@ class FAQ_view_test(TestCase):
     def setUp(self):
         FAQ_Question_Answer.objects.create(Question='What on Earth?', Answer="It's cheese.")
 
+        settings_manager = override_settings(SECURE_SSL_REDIRECT=False)
+        settings_manager.enable()
+        self.addCleanup(settings_manager.disable)
+
     def test_view_exists_at_correct_url(self):
         response = self.client.get('/FAQ/')
         self.assertEqual(response.status_code, 200)
@@ -61,6 +69,10 @@ class FAQ_view_test(TestCase):
         self.assertContains(response,'What on Earth?')
 
 class CV_view_test(TestCase):
+    def setUp(self):
+        settings_manager = override_settings(SECURE_SSL_REDIRECT=False)
+        settings_manager.enable()
+        self.addCleanup(settings_manager.disable)
     def test_view_exists_at_correct_url(self):
         response = self.client.get('/CV/')
         self.assertEqual(response.status_code, 200)
@@ -70,6 +82,10 @@ class CV_view_test(TestCase):
         self.assertEqual(response.status_code, 200)
 
 class thesis_view_test(TestCase):
+    def setUp(self):
+        settings_manager = override_settings(SECURE_SSL_REDIRECT=False)
+        settings_manager.enable()
+        self.addCleanup(settings_manager.disable)
     @classmethod
     def setUpTestData(cls):
         file = SimpleUploadedFile('thesis.txt',b'test thesis content')

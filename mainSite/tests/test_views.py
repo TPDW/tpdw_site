@@ -3,7 +3,7 @@ import os
 from django.test import TestCase
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
-
+from django.conf import settings
 from mainSite.models import GCSE, A_level, Degree, Thesis, FAQ_Question_Answer
 
 class QualificationsViewTest(TestCase):
@@ -78,8 +78,8 @@ class thesis_view_test(TestCase):
     @classmethod
     def tearDownClass(cls):
         thesis = Thesis.objects.get(title='Test Title')
-        os.remove(f'{os.getcwd()}\\theses\\{thesis.uuid}\\thesis.txt')
-        os.rmdir(f'{os.getcwd()}\\theses\\{thesis.uuid}')
+        os.remove(f'{settings.MEDIA_ROOT}\\theses\\{thesis.uuid}\\thesis.txt')
+        os.rmdir(f'{settings.MEDIA_ROOT}\\theses\\{thesis.uuid}')
         super().tearDownClass()
 
     def test_view_exists_at_correct_url(self):

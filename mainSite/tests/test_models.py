@@ -1,6 +1,7 @@
 import os
 from django.test import TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.conf import settings
 from mainSite.models import GCSE, A_level, Degree, Thesis, FAQ_Question_Answer
 # Create your tests here.
 
@@ -36,8 +37,8 @@ class DegreeTestCase(TestCase):
                             university='Oxford',grade='1st')
     def tearDown(self):
         thesis = Thesis.objects.get(title='Test Title')
-        os.remove(f'{os.getcwd()}\\theses\\{thesis.uuid}\\thesis.txt')
-        os.rmdir(f'{os.getcwd()}\\theses\\{thesis.uuid}')
+        os.remove(f'{settings.MEDIA_ROOT}\\theses\\{thesis.uuid}\\thesis.txt')
+        os.rmdir(f'{settings.MEDIA_ROOT}\\theses\\{thesis.uuid}')
 
     def test_strings(self):
         degree=Degree.objects.get(subject='PPE')
@@ -51,8 +52,8 @@ class ThesisTestCase(TestCase):
 
     def tearDown(self):
         thesis = Thesis.objects.get(title='Test Title')
-        os.remove(f'{os.getcwd()}\\theses\\{thesis.uuid}\\thesis.txt')
-        os.rmdir(f'{os.getcwd()}\\theses\\{thesis.uuid}')
+        os.remove(f'{settings.MEDIA_ROOT}\\theses\\{thesis.uuid}\\thesis.txt')
+        os.rmdir(f'{settings.MEDIA_ROOT}\\theses\\{thesis.uuid}')
 
     def test_thesis(self):
         thesis = Thesis.objects.get(title='Test Title')

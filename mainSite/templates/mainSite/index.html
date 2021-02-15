@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Homepage{% endblock %}
+{% block content %}
+{% load static %}
+<div class="row mb-3">
+  <div class="col-md-8 themed-grid-col">
+    {% lorem 5 p %}
+
+
+  </div>
+  <div class="col-md-4 themed-grid-col">
+    <img src={% static 'mainSite/images/zoo_selfie.jpg' %} class="img-fluid" alt="Tom Weir Headshot">
+
+  </div>
+</div>
+{% endblock %}

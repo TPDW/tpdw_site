@@ -14,6 +14,7 @@
      {#figure out how to extract the last bit from the file parameter#}
      {% if degree.thesis %}
      </br> Thesis:
+     {#<a href={{degree.thesis.file.url}}>{{degree.thesis.title}}</a>#}
      <a href={% url 'thesis' degree.thesis.uuid|stringformat:"s"  %}>{{degree.thesis.title}}</a>
      {% endif %}
   {% endfor %}

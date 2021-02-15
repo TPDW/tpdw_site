@@ -36,6 +36,8 @@
 
     <!-- Custom styles for this template -->
     <link href={% static "mainSite/starter-template.css" %} rel="stylesheet">
+
+    <link rel="icon" type="image/png" href={% static 'mainSite/images/favicon.png' %}>
   </head>
   <body>
 
@@ -52,7 +54,7 @@
           <a class="nav-link" aria-current="page" href="{% url 'index' %}">Home</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'CV' %}">CV</a>
+          <a class="nav-link" href="{% static 'mainSite/PDFs/CV.pdf' %}">CV</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="{% url 'qualifications' %}" >Qualifications</a>

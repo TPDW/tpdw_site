@@ -1,7 +1,8 @@
 import os
 from django.shortcuts import render, redirect
-from django.http import HttpResponse, FileResponse
+from django.http import HttpResponse, FileResponse, Http404
 from django.views import generic
+from django.conf import settings
 from .models import Qualification, GCSE, A_level, Degree, Thesis, FAQ_Question_Answer, Coursera_Course
 
 # Create your views here.
@@ -12,8 +13,6 @@ def CV(request):
     pdf = open(r'mainSite\static\mainSite\PDFs\CV.pdf','rb')
     return FileResponse(pdf)
 
-def rickroll(request):
-    return redirect('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
 
 class QualificationsView(generic.TemplateView):
     template_name = 'mainSite/qualifications.html'
@@ -28,10 +27,41 @@ class QualificationsView(generic.TemplateView):
 def thesis_view(request,thesis_uuid):
     #TODO check if this works with non-pdf formats
     #if not, add file extension check such that other formats are downloaded
-    filepath = 'theses\\' + thesis_uuid
+    filepath = settings.MEDIA_ROOT+'\\theses\\' + thesis_uuid
     file_list = os.listdir(filepath)
     filepath += "\\"+file_list[0]
     return FileResponse(open(filepath,'rb'))
+
+
+class ThesisView(generic.View):
+    def get(self, request, *args, **kwargs):
+        if 'thesis_uuid' in kwargs:
+            thesis_uuid = kwargs['thesis_uuid']
+            filepath = settings.MEDIA_ROOT+'\\theses\\' + thesis_uuid
+            file_list = os.listdir(filepath)
+            filepath += "\\"+file_list[0]
+            return FileResponse(open(filepath,'rb'))
+        else:
+            return Http404()
+
+
+    def head(self, request, *args, **kwargs):
+        return self.get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.get(request, *args, **kwargs)
+
+    def options(self, request, *args, **kwargs):
+        return self.get(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.get(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.get(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.get(request, *args, **kwargs)
 
 
 class FAQView(generic.TemplateView):
@@ -42,4 +72,4 @@ class FAQView(generic.TemplateView):
         return context
 
 class indexView(generic.TemplateView):
-    template_name = 'base.html'
+    template_name = 'mainSite/index.html'

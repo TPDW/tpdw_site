@@ -136,7 +136,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
 
 SECURE_HSTS_SECONDS = 60
 
-SECURE_SSL_REDIRECT = True
+try:
+    SECURE_SSL_REDIRECT = os.environ['SECURE_SSL_REDIRECT']
+except:
+    SECURE_SSL_REDIRECT = True
 
 SESSION_COOKIE_SECURE = True
 

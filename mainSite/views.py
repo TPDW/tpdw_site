@@ -75,4 +75,4 @@ class indexView(generic.TemplateView):
     template_name = 'mainSite/index.html'
 
 class contactView(generic.TemplateView):
-    template_name = 'mainsite/contact.html'
+    template_name = 'mainsite/index.html'

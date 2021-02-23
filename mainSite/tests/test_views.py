@@ -110,3 +110,31 @@ class thesis_view_test(TestCase):
         response = self.client.get(reverse('thesis',args=[f'{thesis.uuid}']))
         self.assertEqual(response.status_code, 200)
         response.close()
+
+class index_view_test(TestCase):
+    def setUp(self):
+        settings_manager = override_settings(SECURE_SSL_REDIRECT=False)
+        settings_manager.enable()
+        self.addCleanup(settings_manager.disable)
+
+    def test_view_exists_at_correct_url(self):
+        response = self.client.get('')
+        self.assertEqual(response.status_code,200)
+
+    def test_view_accessible_by_name(self):
+        response = self.client.get(reverse('index'))
+        self.assertEqual(response.status_code,200)
+
+class contact_view_text(TestCase):
+    def setUp(self):
+        settings_manager = override_settings(SECURE_SSL_REDIRECT=False)
+        settings_manager.enable()
+        self.addCleanup(settings_manager.disable)
+
+    def test_view_exists_at_correct_url(self):
+        response = self.client.get('/contact/')
+        self.assertEqual(response.status_code,200)
+
+    def test_view_accessible_by_name(self):
+        response = self.client.get(reverse('contact'))
+        self.assertEqual(response.status_code,200)

@@ -14,8 +14,6 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-#BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
@@ -23,13 +21,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 try:
     SECRET_KEY = open('tpdw/secret_key.txt').read().strip()
-except:
+except OSError:
     SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1','.herokuapp.com','tpdw.uk', 'www.tpdw.uk']
+ALLOWED_HOSTS = ['127.0.0.1', '.herokuapp.com', 'tpdw.uk', 'www.tpdw.uk']
 
 
 # Application definition
@@ -132,13 +130,13 @@ MEDIA_URL = '/media/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
 
-#SECURITY
+# SECURITY
 
 SECURE_HSTS_SECONDS = 60
 
 try:
     SECURE_SSL_REDIRECT = os.environ['SECURE_SSL_REDIRECT']
-except:
+except KeyError:
     SECURE_SSL_REDIRECT = True
 
 SESSION_COOKIE_SECURE = True

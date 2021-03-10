@@ -1,21 +1,18 @@
 import os
-from django.shortcuts import render, redirect
-from django.http import HttpResponse, FileResponse, Http404
+from django.http import FileResponse, Http404
 from django.views import generic
 from django.conf import settings
-from .models import Qualification, GCSE, A_level, Degree, Thesis, FAQ_Question_Answer, Coursera_Course
+from .models import GCSE, A_level, Degree, FAQ_Question_Answer, Coursera_Course
 
-# Create your views here.
-# def index(request):
-#     return HttpResponse("Hello, world. You're at the index.")
 
 def CV(request):
-    pdf = open(r'mainSite\static\mainSite\PDFs\CV.pdf','rb')
+    pdf = open(r'mainSite\static\mainSite\PDFs\CV.pdf', 'rb')
     return FileResponse(pdf)
 
 
 class QualificationsView(generic.TemplateView):
     template_name = 'mainSite/qualifications.html'
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['GCSE_list'] = GCSE.objects.all()
@@ -24,13 +21,14 @@ class QualificationsView(generic.TemplateView):
         context['Coursera_Course_list'] = Coursera_Course.objects.all()
         return context
 
-def thesis_view(request,thesis_uuid):
-    #TODO check if this works with non-pdf formats
-    #if not, add file extension check such that other formats are downloaded
+
+def thesis_view(request, thesis_uuid):
+    # TODO check if this works with non-pdf formats
+    # if not, add file extension check such that other formats are downloaded
     filepath = settings.MEDIA_ROOT+'\\theses\\' + thesis_uuid
     file_list = os.listdir(filepath)
     filepath += "\\"+file_list[0]
-    return FileResponse(open(filepath,'rb'))
+    return FileResponse(open(filepath, 'rb'))
 
 
 class ThesisView(generic.View):
@@ -40,10 +38,9 @@ class ThesisView(generic.View):
             filepath = settings.MEDIA_ROOT+'\\theses\\' + thesis_uuid
             file_list = os.listdir(filepath)
             filepath += "\\"+file_list[0]
-            return FileResponse(open(filepath,'rb'))
+            return FileResponse(open(filepath, 'rb'))
         else:
             return Http404()
-
 
     def head(self, request, *args, **kwargs):
         return self.get(request, *args, **kwargs)
@@ -66,13 +63,16 @@ class ThesisView(generic.View):
 
 class FAQView(generic.TemplateView):
     template_name = 'mainSite/FAQ.html'
-    def get_context_data(self,**kwargs):
+
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['FAQ_list'] = FAQ_Question_Answer.objects.all()
         return context
 
+
 class indexView(generic.TemplateView):
     template_name = 'mainSite/index.html'
+
 
 class contactView(generic.TemplateView):
     template_name = 'mainSite/contact.html'

@@ -101,8 +101,8 @@ class thesis_view_test(TestCase):
     @classmethod
     def tearDownClass(cls):
         thesis = Thesis.objects.get(title='Test Title')
-        os.remove(f'{settings.MEDIA_ROOT}\\theses\\{thesis.uuid}\\thesis.txt')
-        os.rmdir(f'{settings.MEDIA_ROOT}\\theses\\{thesis.uuid}')
+        os.remove(f'{settings.MEDIA_ROOT}/theses/{thesis.uuid}/thesis.txt')
+        os.rmdir(f'{settings.MEDIA_ROOT}/theses/{thesis.uuid}')
         super().tearDownClass()
 
     def test_view_exists_at_correct_url(self):

@@ -6,7 +6,7 @@ from .models import GCSE, A_level, Degree, FAQ_Question_Answer, Coursera_Course
 
 
 def CV(request):
-    pdf = open(r'mainSite\static\mainSite\PDFs\CV.pdf', 'rb')
+    pdf = open(r'mainSite/static/mainSite/PDFs/CV.pdf', 'rb')
     return FileResponse(pdf)
 
 
@@ -25,9 +25,9 @@ class QualificationsView(generic.TemplateView):
 def thesis_view(request, thesis_uuid):
     # TODO check if this works with non-pdf formats
     # if not, add file extension check such that other formats are downloaded
-    filepath = settings.MEDIA_ROOT+'\\theses\\' + thesis_uuid
+    filepath = settings.MEDIA_ROOT+'/theses/' + thesis_uuid
     file_list = os.listdir(filepath)
-    filepath += "\\"+file_list[0]
+    filepath += "/"+file_list[0]
     return FileResponse(open(filepath, 'rb'))
 
 
@@ -35,9 +35,9 @@ class ThesisView(generic.View):
     def get(self, request, *args, **kwargs):
         if 'thesis_uuid' in kwargs:
             thesis_uuid = kwargs['thesis_uuid']
-            filepath = settings.MEDIA_ROOT+'\\theses\\' + thesis_uuid
+            filepath = settings.MEDIA_ROOT+'/theses/' + thesis_uuid
             file_list = os.listdir(filepath)
-            filepath += "\\"+file_list[0]
+            filepath += "/"+file_list[0]
             return FileResponse(open(filepath, 'rb'))
         else:
             return Http404()

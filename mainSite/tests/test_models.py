@@ -39,8 +39,8 @@ class DegreeTestCase(TestCase):
 
     def tearDown(self):
         thesis = Thesis.objects.get(title='Test Title')
-        os.remove(f'{settings.MEDIA_ROOT}\\theses\\{thesis.uuid}\\thesis.txt')
-        os.rmdir(f'{settings.MEDIA_ROOT}\\theses\\{thesis.uuid}')
+        os.remove(f'{settings.MEDIA_ROOT}/theses/{thesis.uuid}/thesis.txt')
+        os.rmdir(f'{settings.MEDIA_ROOT}/theses/{thesis.uuid}')
 
     def test_strings(self):
         degree = Degree.objects.get(subject='PPE')
@@ -54,8 +54,8 @@ class ThesisTestCase(TestCase):
 
     def tearDown(self):
         thesis = Thesis.objects.get(title='Test Title')
-        os.remove(f'{settings.MEDIA_ROOT}\\theses\\{thesis.uuid}\\thesis.txt')
-        os.rmdir(f'{settings.MEDIA_ROOT}\\theses\\{thesis.uuid}')
+        os.remove(f'{settings.MEDIA_ROOT}/theses/{thesis.uuid}/thesis.txt')
+        os.rmdir(f'{settings.MEDIA_ROOT}/theses/{thesis.uuid}')
 
     def test_thesis(self):
         thesis = Thesis.objects.get(title='Test Title')

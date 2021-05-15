@@ -35,7 +35,7 @@
 
 
     <!-- Custom styles for this template -->
-    <link href={% static "mainSite/starter-template.css" %} rel="stylesheet">
+    <link href={% static "mainSite/css/starter-template.css" %} rel="stylesheet">
 
     <link rel="icon" type="image/png" href={% static 'mainSite/images/favicon.png' %}>
   </head>
@@ -71,9 +71,9 @@
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="dropdown01" data-bs-toggle="dropdown" aria-expanded="false">Projects</a>
           <ul class="dropdown-menu" aria-labelledby="dropdown01">
-            <li><a class="dropdown-item" href="#">Watch</a></li>
-            <li><a class="dropdown-item" href="#">This</a></li>
-            <li><a class="dropdown-item" href="#">Space</a></li>
+            <li><a class="dropdown-item" href="{% url 'mandelbrot' %}">Mandelbrot</a></li>
+            <li><a class="dropdown-item" href="#">More</a></li>
+            <li><a class="dropdown-item" href="#">Soon!</a></li>
           </ul>
         </li>
       </ul>

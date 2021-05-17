@@ -22,7 +22,7 @@
     <input type=number id='dpi'min=0 value=1>
     <br>
     Preserve Aspect Ratio
-    <input type="checkbox" id='aspectRatio'>
+    <input type="checkbox" id='aspectRatio' checked>
     <br>
     Use Distance Estimation
     <input type="checkbox" id='distanceEstimation' checked>
@@ -41,10 +41,13 @@
         <canvas id = 'drawingCanvas' ></canvas>
         <canvas id = 'controlCanvas', width = '10', height = '10'></canvas>
         <canvas id = 'coordinateCanvas'></canvas>
-        <div class="ldBar" data-value="50" id='ldBar'></div>
+        <div class=" d-flex justify-content-center my-auto" >
+        <div class="ldBar " data-value="0" id='ldBar' data-preset='circle'></div>
+        </div>
     </div>
 </div>
+<div hidden id='mandelbrotWorkerUrl'>{% static "mainSite/js/mandelbrotWorker.js" %}</div>
 <script src = {% static "mainSite/js/colormaps.js" %}></script>
-<script src = {% static "mainSite/js/mandelbrot.js" %}></script>
+<script src = {% static "mainSite/js/mandelbrot_threaded.js" %}></script>
 
 {% endblock %}

@@ -96,12 +96,16 @@ function draw(xmin = -2.5, xmax = 1, ymin = -1.75, ymax = 1.75, colormap=null, s
         let colormapLength = colormap ? colormap.length : 0;
         // console.log('loop 1 started');
         for (let i=0; i<h; i++){
+            // I think I'd have to rewrite this recursively to get a loading bar to work
+            // and how that could be parallelised I do not know
+            
             // ctrlCtx.clearRect(0,0,ctrlCtx.canvas.width,ctrlCtx.canvas.height);
             // ctrlCtx.beginPath();
             // ctrlCtx.arc(xMid, yMid, 25, 0, 2*Math.PI*i/h);
             // ctrlCtx.fill();
             // alert(1)
             ld.ldBar.set(100*i/h);
+            // setTimeout("",0);
             for (let j=0; j<w; j++){
             x = xmin + deltax*j/w;
             y = ymax - deltay*i/h;

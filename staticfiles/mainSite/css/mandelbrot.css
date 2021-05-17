@@ -3,23 +3,20 @@ body {
     overflow: hidden;
     background-color: grey;
   }
-
-
-
-.right{
-    background-color: crimson;
-    /* width: 100%; */
-    /* height: 100%; */
-    /* margin: 0; */
+#ldbar{
+    z-index: 0;
 }
 
+
+
+
 #drawingCanvas{
-    background-color: green;
+    background-color: transparent;
     /* width: auto; */
     /* height: 100%; */
     margin:0;
     position: absolute;
-    z-index: 0;
+    z-index: 5;
 }
 
 #controlCanvas{
@@ -29,3 +26,9 @@ body {
     z-index: 50;
 }
 
+#coordinateCanvas{
+    background-color: transparent;
+    margin: 0;
+    position: absolute;
+    z-index: 10;
+}

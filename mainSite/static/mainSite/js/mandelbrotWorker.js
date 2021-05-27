@@ -7,7 +7,7 @@ onmessage = function(e){
     let ymax = e.data[3];
     let w = e.data[4];
     let h = e.data[5];
-    let i = e.data[6];
+    let j = e.data[6];
     let useDistanceEstimation = e.data[7];
 
     let numPixels = w*h;
@@ -16,8 +16,11 @@ onmessage = function(e){
     let deltax=xmax-xmin;
     let deltay=ymax-ymin;
 
-    let numLdBarUpdates = 100;
+    let numLdBarUpdates = 25;
     let ldBarUpdateInterval = Math.floor(h/numLdBarUpdates);
+    ldBarUpdateInterval = Math.min(ldBarUpdateInterval,1);
+
+    console.log("worker", j, ldBarUpdateInterval,h)
 
     for (let i=0; i<h; i++){
         if (i % ldBarUpdateInterval == 0){
@@ -44,7 +47,7 @@ onmessage = function(e){
 
         }
     }
-    postMessage([i,escapeValArray]);
+    postMessage([j,escapeValArray]);
 }
 function distanceEstimation(x0, y0){
     if ((x0+1)**2+y0**2 <= 0.0625){

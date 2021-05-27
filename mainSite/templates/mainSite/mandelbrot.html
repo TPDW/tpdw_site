@@ -10,12 +10,31 @@
     <div class='d-flex flex-column p-3 bg-dark text-white h-100' id = 'controller' style="width: 25%">
         Colour Map
     <select id='colorMap'>
+        <optgroup label='Sequential'>
         <option value = 'null' selected>Grayscale</option>
-        <option value = 'seismic'>Seismic</option>
-        <option value = 'flag'>Flag</option>
-        <option value = 'prism'>Prism</option>
-        <option value = 'jet'>Jet</option>
-        <option value = 'Spectral'>Spectral</option>
+        <option value = 'bone'>Bone</option>
+        <option value = 'pink'>Pink</option>
+        <option value = 'summer'>Summer</option>
+        <option value = 'winter'>Winter</option>
+        </optgroup>
+        <optgroup label="Sequential (reversed)">
+            <option value = 'Greys'>Grayscale (reversed)</option>
+            <option value = 'Blues'>Blues</option>
+            <option value = 'Oranges'>Oranges</option>
+        </optgroup>
+        <optgroup label = "Diverging">
+            <option value = 'seismic'>Seismic</option>
+            <option value = 'Spectral'>Spectral</option>
+        </optgroup>
+        <optgroup label = "Recuring">
+            <option value = 'flag'>Flag</option>
+            <option value = 'prism'>Prism</option>
+        </optgroup>
+        <optgroup label = "Miscellaneous">
+            <option value = 'jet'>Jet</option>
+            <option value = 'rainbow'>Rainbow</option>
+            <option value = 'gnuplot'>Gnuplot</option>
+        </optgroup>
     </select>
     <br>
     Resolution
@@ -33,6 +52,8 @@
     <button id = 'drawButton'>Draw</button>
     <br>
     <button id = 'resetButton'>Reset</button>
+    <br>
+    <button id = 'exportButton' download="mandelbrot.png">Save</button>
     
     
     

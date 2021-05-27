@@ -17,7 +17,7 @@ function getCanvasAspectRatio(){
 
 function getAspectRatioPreserved(){
     let aspectRatioSelector = document.getElementById('aspectRatio');
-    console.log(aspectRatioSelector.checked)
+    // console.log(aspectRatioSelector.checked)
     return aspectRatioSelector.checked
 }
 
@@ -144,7 +144,9 @@ function draw(xmin = -2.5, xmax = 1, ymin = -1.75, ymax = 1.75, scaleFactor=null
         canvas.style.height = window.innerHeight-3.5*rem + 'px';
         canvas.style.width = window.innerWidth*0.75 + 'px';
 
-        scaleFactor = scaleFactor ?? getScaleFactor();
+        scaleFactor =  getScaleFactor();
+
+        console.log("scale factor", scaleFactor);
 
         canvas.height = (window.innerHeight-3.5*rem)*scaleFactor;
         canvas.width = window.innerWidth*0.75*scaleFactor;
@@ -236,7 +238,7 @@ function main(){
                 let currentY = event.clientY - 3.5*rem;
                 if (aspectRatioPreserved){
                     let boxSize = Math.max((currentX-mouseDownX), (currentY-mouseDownY)*mainCanvasAspectRatio);
-                    ctx.strokeRect(mouseDownX, mouseDownY, boxSize, boxSize);
+                    ctx.strokeRect(mouseDownX, mouseDownY, boxSize, boxSize/mainCanvasAspectRatio);
                     // console.log(mouseDownX, mouseDownY,currentX,currentY,mouseDownX+boxSize, mouseDownY+boxSize,boxSize, mainCanvasAspectRatio);
                 }
                 else{
@@ -249,16 +251,22 @@ function main(){
                 // console.log('mouseover');
                 let ctx = coordCanvas.getContext('2d');
                 ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
-                let xCoord = 0;
-                let yCoord = 0;
+                // let xCoord = 0;
+                // let yCoord = 0;
                 let coordString;
-                [xCoord, yCoord] = getArgandXYCoordinatesFromMouse(event.clientX/ctx.canvas.width, event.clientY/ctx.canvas.height);
-                // console.log(xCoord, yCoord, event.clientX, event.clientY);
+                let xCoord = xmin + (xmax-xmin)*(event.clientX - 0.25*window.innerWidth)/ctx.canvas.width; 
+                let yCoord = ymax - (ymax-ymin)*(event.clientY - 3.5*rem)/ctx.canvas.height;
+
+                let xPrecision = Math.floor(-Math.log10(xmax-xmin))+2;
+                let yPrecision = Math.floor(-Math.log10(ymax-ymin))+2;
+
+                // console.log('precision', xPrecision, yPrecision);
+                
                 if (yCoord > 0){
-                coordString = "z = " + xCoord.toExponential(3) + " + " + yCoord.toExponential(3) + "i";
+                coordString = "z = " + xCoord.toExponential(xPrecision) + " + " + yCoord.toExponential(yPrecision) + "i";
                 }
                 else{
-                coordString = "z = " + xCoord.toExponential(3) + " - " + (-yCoord).toExponential(3)+ "i";
+                coordString = "z = " + xCoord.toExponential(xPrecision) + " - " + (-yCoord).toExponential(yPrecision)+ "i";
                 }
                 // console.log(coordString)
                 ctx.font = '48px serif'
@@ -287,45 +295,81 @@ function main(){
                 ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height)
                 let mouseUpX = event.clientX - 0.25*window.innerWidth;
                 let mouseUpY = event.clientY - 3.5*rem;
-                console.log(mouseDownX, mouseUpX, mouseDownY, mouseUpY);
+                console.log("mouse locations",mouseDownX, mouseUpX, mouseDownY, mouseUpY);
 
+                if (mouseDownX == mouseUpX || mouseUpY == mouseDownY){
+                    console.log('zero size rectangle selected, draw not called');
+                    return;
+                }
                 let canvasWidth = 0.75*window.innerWidth;
                 let canvasHeight = window.innerHeight - 3.5*rem;
                 
-                let fractionalMinX = Math.min(mouseDownX, mouseUpX)/canvasWidth;
-                let fractionalMaxX = Math.max(mouseDownX, mouseUpX)/canvasWidth;
-                let fractionalMinY = Math.min(mouseDownY, mouseUpY)/canvasHeight;
-                let fractionalMaxY = Math.max(mouseDownY, mouseUpY)/canvasHeight;
-
                 if (aspectRatioPreserved){
-                    let fractionalDeltaX = fractionalMaxX - fractionalMinX;
-                    let fractionalDeltaY = fractionalMaxY - fractionalMinY;
-                    let fractionalBoxSize = Math.max(fractionalDeltaX, fractionalDeltaY*mainCanvasAspectRatio);
-                    fractionalMaxX = fractionalMinX + fractionalBoxSize;
-                    fractionalMaxY = fractionalMinY + fractionalBoxSize;
+
+                    let boxSize = Math.max((mouseUpX-mouseDownX), (mouseUpY-mouseDownY)*mainCanvasAspectRatio);
+
+                    console.log("bozsize, canvasWidht, canvasHeight", boxSize, canvasWidth, canvasHeight);
+
+                    let fractionalMinX = mouseDownX/canvasWidth;
+                    let fractionalMinY = mouseDownY/canvasHeight;
+                    let fractionalMaxX = (mouseDownX + boxSize)/canvasWidth;
+                    let fractionalMaxY = (mouseDownY + boxSize/mainCanvasAspectRatio)/canvasHeight;
+
+                    console.log("fractional xmin/max,ymin/max", fractionalMinX, fractionalMaxX,
+                                fractionalMinY, fractionalMaxY)
+
+
+                    let xminTemp = xmin + fractionalMinX*(xmax-xmin);
+                    let xmaxTemp = xmin + fractionalMaxX*(xmax-xmin);
+                    let yminTemp = ymax - fractionalMaxY*(ymax-ymin);
+                    let ymaxTemp = ymax - fractionalMinY*(ymax-ymin);
+
+                    xmin = xminTemp;
+                    xmax = xmaxTemp;
+                    ymin = yminTemp;
+                    ymax = ymaxTemp;
+
+
 
                 }
 
+                else{
 
-                console.log(fractionalMinX, fractionalMaxX, fractionalMinY, fractionalMaxY);
+                    let fractionalMinX = Math.min(mouseDownX, mouseUpX)/canvasWidth;
+                    let fractionalMaxX = Math.max(mouseDownX, mouseUpX)/canvasWidth;
+                    let fractionalMinY = Math.min(mouseDownY, mouseUpY)/canvasHeight;
+                    let fractionalMaxY = Math.max(mouseDownY, mouseUpY)/canvasHeight;
+                    let xminTemp = xmin + fractionalMinX*(xmax-xmin);
+                    let xmaxTemp = xmin + fractionalMaxX*(xmax-xmin);
+                    let yminTemp = ymax - fractionalMaxY*(ymax-ymin);
+                    let ymaxTemp = ymax - fractionalMinY*(ymax-ymin);
+                    xmin = xminTemp;
+                    xmax = xmaxTemp;
+                    ymin = yminTemp;
+                    ymax = ymaxTemp;
 
-                let xminTemp = xmin + fractionalMinX*(xmax-xmin);
-                let xmaxTemp = xmin + fractionalMaxX*(xmax-xmin);
-                let yminTemp = ymax - fractionalMaxY*(ymax-ymin);
-                let ymaxTemp = ymax - fractionalMinY*(ymax-ymin);
-                console.log(xmin, xmax, ymin, ymax);
 
-                xmin = xminTemp;
-                xmax = xmaxTemp;
-                ymin = yminTemp;
-                ymax = ymaxTemp;
-                console.log(xmin, xmax, ymin, ymax);
-                draw(xmin, xmax, ymin, ymax,colormap,scaleFactor=2.0);
+                }
+
+                console.log("xmin/max, ymin/max",xmin, xmax, ymin, ymax);
+
+                draw(xmin, xmax, ymin, ymax,colormap,scaleFactor=2.0);           
             }
         }
         }
-    // draw(xmin, xmax, ymin, ymax,colormap,scaleFactor=0.1);
-    draw(xmin, xmax, ymin, ymax,colormap,scaleFactor=1);
+
+    mainCanvasAspectRatio = getCanvasAspectRatio(); // x/y
+    if (mainCanvasAspectRatio < 1){
+        ymin /= mainCanvasAspectRatio;
+        ymax /= mainCanvasAspectRatio; 
+    }
+
+    if (mainCanvasAspectRatio > 1){
+        xmin *= mainCanvasAspectRatio;
+        xmax *= mainCanvasAspectRatio;
+    }
+
+    draw(xmin, xmax, ymin, ymax, colormap);
 }
 
 let button = document.getElementById('drawButton');
@@ -339,6 +383,20 @@ xmax = 0.75;
 ymin = -1.5;
 ymax = 1.5;
 draw(xmin, xmax, ymin, ymax);
+}
+
+button = document.getElementById('exportButton');
+button.onclick = function(event){
+    console.log('save button clicked');
+    let canvas = document.getElementById('drawingCanvas');
+    let img = canvas.toDataURL("image/png");
+    // button.href = img;
+    // window.open(img);
+    var anchor = document.createElement('a');
+    anchor.href = img;
+    anchor.target = '_blank';
+    anchor.download = "mandelbrot.png";
+    anchor.click();
 }
 
 window.onload = main;

@@ -12,4 +12,5 @@ urlpatterns = [
     path('FAQ/', views.FAQView.as_view(), name='FAQ'),
     path('contact/', views.contactView.as_view(), name='contact'),
     path('mandelbrot/', views.mandelbrotView.as_view(), name='mandelbrot'),
+    path('mandelbrot/about', views.mandelbrotAboutView.as_view(), name='mandelbrot_about'),
 ]

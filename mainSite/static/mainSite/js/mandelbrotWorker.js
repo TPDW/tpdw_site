@@ -24,7 +24,7 @@ onmessage = function(e){
 
     for (let i=0; i<h; i++){
         if (i % ldBarUpdateInterval == 0){
-            postMessage(["update",ldBarUpdateInterval]);
+            postMessage(["ldBarUpdate",ldBarUpdateInterval]);
         }
         for (let j=0; j<w; j++){
             let x = xmin + deltax*j/w;
@@ -47,7 +47,7 @@ onmessage = function(e){
 
         }
     }
-    postMessage([j,escapeValArray]);
+    postMessage(["calculationsFinished",j,escapeValArray]);
 }
 function distanceEstimation(x0, y0){
     if ((x0+1)**2+y0**2 <= 0.0625){

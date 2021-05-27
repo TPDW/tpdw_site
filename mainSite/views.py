@@ -79,3 +79,7 @@ class contactView(generic.TemplateView):
 
 class mandelbrotView(generic.TemplateView):
     template_name = 'mainSite/mandelbrot.html'
+
+
+class mandelbrotAboutView(generic.TemplateView):
+    template_name = 'mainSite/mandelbrot_about.html'

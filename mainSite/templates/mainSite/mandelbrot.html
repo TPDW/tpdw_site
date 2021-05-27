@@ -8,7 +8,15 @@
 <link href={% static "mainSite/css/mandelbrot.css" %} rel="stylesheet">
 <div class='row g-0 vh-100'>
     <div class='d-flex flex-column p-3 bg-dark text-white h-100' id = 'controller' style="width: 25%">
-        Colour Map
+    This is an HTML5 Canvas based viewer for the Mandelbrot set.<br>
+    Instructions:<br>
+    Click and drag to zoom<br>
+    Configuration options below<br> 
+
+    <a href = {% url 'mandelbrot_about' %}>About</a>
+
+    <br><br>
+    Colour Map
     <select id='colorMap'>
         <optgroup label='Sequential'>
         <option value = 'null' selected>Grayscale</option>
@@ -25,6 +33,7 @@
         <optgroup label = "Diverging">
             <option value = 'seismic'>Seismic</option>
             <option value = 'Spectral'>Spectral</option>
+            <option value = 'bwr'>BWR</option>
         </optgroup>
         <optgroup label = "Recuring">
             <option value = 'flag'>Flag</option>
@@ -54,6 +63,7 @@
     <button id = 'resetButton'>Reset</button>
     <br>
     <button id = 'exportButton' download="mandelbrot.png">Save</button>
+
     
     
     

@@ -1,3 +1,31 @@
+// Global Variables
+
+// Parallelisation Variables
+let numCores = window.navigator.hardwareConcurrency;
+let workerArray = new Array(numCores);
+let escapeValMetaArray = new Array(numCores);
+let workerReturnedArray = new Array(numCores);
+let workerUrl = document.getElementById('mandelbrotWorkerUrl').innerHTML
+let totalLines=0;
+let linesProcessed=0;
+
+
+// Plotting control variables
+let xmin = -2.25;
+let xmax = 0.75;
+let ymin = -1.5;
+let ymax = 1.5;
+let colormap = null;
+let mainCanvasAspectRatio = null;
+let aspectRatioPreserved = null;
+let rem = parseFloat(window.getComputedStyle(document.getElementById('canvasContainer')).fontSize);
+let useDistanceEstimation = false;
+let displayCoordinates = true;
+
+
+//Functions
+// Utility Functions
+
 function getColormap(){
     let colormapSelector = document.getElementById('colorMap');
     let colormapString = colormapSelector.options[colormapSelector.selectedIndex].value;
@@ -31,105 +59,109 @@ function getDisplayCoordinates(){
     return displayCoordinatesSelector.checked
 }
 
-function getArgandXYCoordinatesFromMouse(screenX, screenY){
-    // NB may get confusing with notation
-    // this gets the xy coordinates on the argand plane
-    // from the xy coordinates on the screen
-    // console.log(screenX, screenY);
-    let argandX = xmin + screenX*0.75*(xmax-xmin);
-    let argandY = ymax - (screenY)*(ymax-ymin);
-    // console.log("argand", screenX, screenY, argandX, argandY);
-    return [argandX, argandY];
-    
 
+
+// Major Functions
+
+//Worker Functions
+
+ldBarUpdate = function(e){
+    ld = document.getElementById('ldBar');
+    linesProcessed += e.data[1];
+    // console.log("lines",linesProcessed,totalLines)
+    ld.ldBar.set(linesProcessed*100/totalLines);
 }
-let numCores = window.navigator.hardwareConcurrency;
-let workerArray = new Array(numCores);
-let escapeValMetaArray = new Array(numCores);
-let workerReturnedArray = new Array(numCores);
 
-    
-workerDataProcess = function(e){
-    if (e.data[0]=="update"){
-        ld = document.getElementById('ldBar');
-        linesProcessed += e.data[1];
-        // console.log("lines",linesProcessed,totalLines)
-        ld.ldBar.set(linesProcessed*100/totalLines);
+collateWorkerImageData = function(){
+    console.log("all loops returned, reconstructing image");
+
+let canvas = document.getElementById('drawingCanvas')
+if (canvas.getContext){
+    let lengths = escapeValMetaArray.map( a => a.length);
+    let totalLength = lengths.reduce((a,b) => a+b,0);
+    console.log(totalLength)
+    console.log(escapeValMetaArray);
+    let escapeValArray = new Float32Array(totalLength);
+    let offset = 0;
+    for (let i=0;i<numCores; i++){
+        escapeValArray.set(escapeValMetaArray[i],offset);
+        offset += escapeValMetaArray[i].length;
+        console.log(offset);
     }
-    else{
+    ctx = canvas.getContext('2d');
+    console.log(escapeValArray);
+    console.log(escapeValMetaArray);
+    let numPixels = escapeValArray.length;
+    let imageDataArray = new Uint8ClampedArray(4*numPixels);
+    let minVal = 10**-15;
+    escapeValArray = escapeValArray.map(x => -Math.log(Math.max(x,minVal)));
+    maxEscapeVal = escapeValArray.reduce(function(a, b) {
+        return Math.max(a, b);
+    });
+    minEscapeVal = escapeValArray.reduce(function(a, b) {
+        return Math.min(a, b);
+    });
+
+    colormap = getColormap();
+    let colormapLength = colormap ? colormap.length : 0;
+
+    for (let i=0; i<numPixels; i++){
+        x = (escapeValArray[i]-minEscapeVal)/(maxEscapeVal-minEscapeVal);
+        if (colormap){
+            let idx = Math.min(Math.floor(colormapLength*x),colormapLength-1);
+            let color = colormap[idx][1];
+
+            imageDataArray[4*i] = Math.floor(255*color[0]);
+            imageDataArray[4*i+1] = Math.floor(255*color[1]);
+            imageDataArray[4*i+2] = Math.floor(255*color[2]);
+            imageDataArray[4*i+3] = 255;                    
+        }
+        else{
+        imageDataArray[4*i] = Math.floor(x*255);
+        imageDataArray[4*i+1] = Math.floor(x*255);
+        imageDataArray[4*i+2] = Math.floor(x*255);
+        imageDataArray[4*i+3] = 250;
+        }
+    }
+
+    console.log('images merged')
+    console.log(imageDataArray);
+    convertedData = new ImageData(imageDataArray, canvas.width, canvas.height);
+    console.log(convertedData)
+    ctx.putImageData(convertedData, 0, 0);
+    ld = document.getElementById('ldBar');
+    ld.style.zIndex = 0;
+}
+}
+
+workerDataProcess = function(e){
     console.log('processing worker output');
-    let i = e.data[0];
-    escapeValMetaArray[i] = e.data[1];
+    let i = e.data[1];
+    escapeValMetaArray[i] = e.data[2];
     workerReturnedArray[i]=1;
 
     if (workerReturnedArray.reduce((a,b) => a+b, 0) == numCores){
-        console.log("all loops returned, reconstructing image");
-
-    let canvas = document.getElementById('drawingCanvas')
-    if (canvas.getContext){
-        let lengths = escapeValMetaArray.map( a => a.length);
-        let totalLength = lengths.reduce((a,b) => a+b,0);
-        console.log(totalLength)
-        console.log(escapeValMetaArray);
-        let escapeValArray = new Float32Array(totalLength);
-        let offset = 0;
-        for (let i=0;i<numCores; i++){
-            escapeValArray.set(escapeValMetaArray[i],offset);
-            offset += escapeValMetaArray[i].length;
-            console.log(offset);
-        }
-        ctx = canvas.getContext('2d');
-        console.log(escapeValArray);
-        console.log(escapeValMetaArray);
-        let numPixels = escapeValArray.length;
-        let imageDataArray = new Uint8ClampedArray(4*numPixels);
-        let minVal = 10**-15;
-        escapeValArray = escapeValArray.map(x => -Math.log(Math.max(x,minVal)));
-        maxEscapeVal = escapeValArray.reduce(function(a, b) {
-            return Math.max(a, b);
-        });
-        minEscapeVal = escapeValArray.reduce(function(a, b) {
-            return Math.min(a, b);
-        });
-
-        colormap = getColormap();
-        let colormapLength = colormap ? colormap.length : 0;
-
-        for (let i=0; i<numPixels; i++){
-            x = (escapeValArray[i]-minEscapeVal)/(maxEscapeVal-minEscapeVal);
-            if (colormap){
-                let idx = Math.min(Math.floor(colormapLength*x),colormapLength-1);
-                let color = colormap[idx][1];
-
-                imageDataArray[4*i] = Math.floor(255*color[0]);
-                imageDataArray[4*i+1] = Math.floor(255*color[1]);
-                imageDataArray[4*i+2] = Math.floor(255*color[2]);
-                imageDataArray[4*i+3] = 255;                    
-            }
-            else{
-            imageDataArray[4*i] = Math.floor(x*255);
-            imageDataArray[4*i+1] = Math.floor(x*255);
-            imageDataArray[4*i+2] = Math.floor(x*255);
-            imageDataArray[4*i+3] = 250;
-            }
-        }
-
-        console.log('images merged')
-        console.log(imageDataArray);
-        convertedData = new ImageData(imageDataArray, canvas.width, canvas.height);
-        console.log(convertedData)
-        ctx.putImageData(convertedData, 0, 0);
-        ld = document.getElementById('ldBar');
-        ld.style.zIndex = 0;
-    }
+        collateWorkerImageData();
     }
 }
+    
+workerMessageProcess = function(e){
+    switch(e.data[0]){
+        case "ldBarUpdate":
+            ldBarUpdate(e);
+            break;
+        case "calculationsFinished":
+            workerDataProcess(e);
+            break;
+        default:
+            console.log("unknown worker return code.")
+
+    }
 }
 
-let workerUrl = document.getElementById('mandelbrotWorkerUrl').innerHTML
 for (let i=0; i<numCores; i++) {
     workerArray[i] = new Worker(workerUrl);
-    workerArray[i].onmessage = workerDataProcess;
+    workerArray[i].onmessage = workerMessageProcess;
     workerReturnedArray[i]=0;
 }
 
@@ -185,19 +217,7 @@ function draw(xmin = -2.5, xmax = 1, ymin = -1.75, ymax = 1.75, scaleFactor=null
     }
 }
 
-let xmin = -2.25;
-let xmax = 0.75;
-let ymin = -1.5;
-let ymax = 1.5;
-let colormap = null;
-let mainCanvasAspectRatio = null;
-let aspectRatioPreserved = null;
-let rem = parseFloat(window.getComputedStyle(document.getElementById('canvasContainer')).fontSize);
-let totalLines=0;
-let linesProcessed=0;
 
-let useDistanceEstimation = false;
-let displayCoordinates = true;
 function main(){
     let ctrlcanvas = document.getElementById('controlCanvas');
     let ctx = ctrlcanvas.getContext('2d');
@@ -369,34 +389,82 @@ function main(){
         xmax *= mainCanvasAspectRatio;
     }
 
+
+
+    let button = document.getElementById('drawButton');
+    button.onclick = function(event){
+        draw(xmin, xmax, ymin, ymax);
+    }
+    button = document.getElementById('resetButton');
+    button.onclick = function(event){
+        xmin = -2.25;
+        xmax = 0.75;
+        ymin = -1.5;
+        ymax = 1.5;
+        mainCanvasAspectRatio = getCanvasAspectRatio(); // x/y
+        if (mainCanvasAspectRatio < 1){
+            ymin /= mainCanvasAspectRatio;
+            ymax /= mainCanvasAspectRatio; 
+        }
+
+        if (mainCanvasAspectRatio > 1){
+            xmin *= mainCanvasAspectRatio;
+            xmax *= mainCanvasAspectRatio;
+        }
+        draw(xmin, xmax, ymin, ymax);
+    }
+
+    button = document.getElementById('exportButton');
+    button.onclick = function(event){
+        console.log('save button clicked');
+        let canvas = document.getElementById('drawingCanvas');
+        let img = canvas.toDataURL("image/png");
+        // button.href = img;
+        // window.open(img);
+        var anchor = document.createElement('a');
+        anchor.href = img;
+        anchor.target = '_blank';
+        anchor.download = "mandelbrot.png";
+        anchor.click();
+    }
+
+    window.onkeyup = function(event){
+        if (event.key == "ArrowRight"){
+            console.log('going right');
+            let deltax = xmax-xmin;
+            let translationFraction = 0.1;
+            xmin += deltax*translationFraction;
+            xmax += deltax*translationFraction;
+            draw(xmin, xmax, ymin, ymax);
+        }
+        if (event.key == "ArrowLeft"){
+            console.log('going left');
+            let deltax = xmax-xmin;
+            let translationFraction = 0.1;
+            xmin -= deltax*translationFraction;
+            xmax -= deltax*translationFraction;
+            draw(xmin, xmax, ymin, ymax);
+        }
+        if (event.key == "ArrowUp"){
+            console.log('going up');
+            let deltay = ymax-ymin;
+            let translationFraction = 0.1;
+            ymin += deltay*translationFraction;
+            ymax += deltay*translationFraction;
+            draw(xmin, xmax, ymin, ymax);
+        }
+        if (event.key == "ArrowDown"){
+            console.log('going down');
+            let deltay = ymax-ymin;
+            let translationFraction = 0.1;
+            ymin -= deltay*translationFraction;
+            ymax -= deltay*translationFraction;
+            draw(xmin, xmax, ymin, ymax);
+        }
+    }
+
     draw(xmin, xmax, ymin, ymax, colormap);
 }
 
-let button = document.getElementById('drawButton');
-button.onclick = function(event){
-    draw(xmin, xmax, ymin, ymax);
-}
-button = document.getElementById('resetButton');
-button.onclick = function(event){
-xmin = -2.25;
-xmax = 0.75;
-ymin = -1.5;
-ymax = 1.5;
-draw(xmin, xmax, ymin, ymax);
-}
-
-button = document.getElementById('exportButton');
-button.onclick = function(event){
-    console.log('save button clicked');
-    let canvas = document.getElementById('drawingCanvas');
-    let img = canvas.toDataURL("image/png");
-    // button.href = img;
-    // window.open(img);
-    var anchor = document.createElement('a');
-    anchor.href = img;
-    anchor.target = '_blank';
-    anchor.download = "mandelbrot.png";
-    anchor.click();
-}
 
 window.onload = main;

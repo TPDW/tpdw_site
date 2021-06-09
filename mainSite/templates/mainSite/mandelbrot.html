@@ -3,9 +3,9 @@
 {% block title %}Mandelbrot{% endblock %}
 {% block content %}
 </main>
-<link href={% static "mainSite/css/loading-bar.css" %} rel="stylesheet">
+<link href={% static "mandelbrot/css/loading-bar.css" %} rel="stylesheet">
 <script type="text/javascript" src={% static "mainSite/js/loading-bar.js" %}></script>
-<link href={% static "mainSite/css/mandelbrot.css" %} rel="stylesheet">
+<link href={% static "mandelbrot/css/mandelbrot.css" %} rel="stylesheet">
 <div class='row g-0 vh-100'>
     <div class='d-flex flex-column p-3 bg-dark text-white h-100' id = 'controller' style="width: 25%">
     This is an HTML5 Canvas based viewer for the Mandelbrot set.<br>
@@ -77,8 +77,8 @@
         </div>
     </div>
 </div>
-<div hidden id='mandelbrotWorkerUrl'>{% static "mainSite/js/mandelbrotWorker.js" %}</div>
-<script src = {% static "mainSite/js/colormaps.js" %}></script>
-<script src = {% static "mainSite/js/mandelbrot_threaded.js" %}></script>
+<div hidden id='mandelbrotWorkerUrl'>{% static "mandelbrot/js/mandelbrotWorker.js" %}</div>
+<script src = {% static "mandelbrot/js/colormaps.js" %}></script>
+<script src = {% static "mandelbrot/js/mandelbrot_threaded.js" %}></script>
 
 {% endblock %}

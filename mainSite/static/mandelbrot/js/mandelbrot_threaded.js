@@ -630,6 +630,15 @@ function main(){
         }
     }
 
+    if(window.location.hash){
+        let hashString = window.location.hash;
+        let hashObject = JSON.parse(decodeURIComponent(hashString.slice(1)));
+        xmin = hashObject['xmin'];
+        xmax = hashObject['xmax'];
+        ymin = hashObject['ymin'];
+        ymax = hashObject['ymax'];
+    }
+
     draw(xmin, xmax, ymin, ymax, colormap);
 }
 

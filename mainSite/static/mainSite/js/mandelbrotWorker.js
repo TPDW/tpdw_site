@@ -9,10 +9,10 @@ onmessage = function(e){
     let h = e.data[5];
     let j = e.data[6];
     let useDistanceEstimation = e.data[7];
+    let translationParameters = e.data[8];
 
     let numPixels = w*h;
     let escapeValArray = new Float32Array(numPixels);
-    // let imageDataArray = new Uint8ClampedArray(4*numPixels);
     let deltax=xmax-xmin;
     let deltay=ymax-ymin;
 
@@ -37,9 +37,8 @@ onmessage = function(e){
             else {
             escapeVal = naive_mandelbrot(x,y);
             }
-            if (isNaN(escapeVal)){//can happen if derivative tends to infinity
+            if (isNaN(escapeVal)){ //can happen if derivative tends to infinity
                 console.log('NaN at i = ', i,', j =', j, 'x,y', x, y);
-                // distanceEstimation(x, y, verbose=true)
                 escapeVal = 0;
             }
             escapeValArray[i*w+j]=escapeVal;
@@ -47,16 +46,14 @@ onmessage = function(e){
 
         }
     }
-    postMessage(["calculationsFinished",j,escapeValArray]);
+    postMessage(["calculationsFinished", j, escapeValArray, translationParameters]);
 }
 function distanceEstimation(x0, y0){
     if ((x0+1)**2+y0**2 <= 0.0625){
-        // console.log(x,y,'central')
         return 0;
     }
     let q = (x0-0.25)**2 + y0**2;
     if (q*(q+(x0-0.25)) <= 0.25*y0**2){
-        // console.log(x,y,'bulb')
         return 0;
     }
     let maxIters=1000;
@@ -87,15 +84,13 @@ function distanceEstimation(x0, y0){
     return absz*Math.log(absz)/absdz; 
 
 }
-
+max_iters=100;
 function naive_mandelbrot(x0, y0){
     if ((x0+1)**2+y0**2 <= 0.0625){
-        // console.log(x,y,'central')
         return max_iters;
     }
     let q = (x0-0.25)**2 + y0**2;
     if (q*(q+(x0-0.25)) <= 0.25*y0**2){
-        // console.log(x,y,'bulb')
         return max_iters;
     }
     let z_x=0;
@@ -106,11 +101,9 @@ function naive_mandelbrot(x0, y0){
         z_y = 2*z_x*z_y + y0;
         z_x = z_x_temp;
         if (z_x**2+z_y**2>4){
-            // console.log(x,y,'escape')
             return k;
         }
     }
-    // console.log(x,y,'final')
     return max_iters;
     
 }

@@ -1,6 +1,10 @@
 // Global Variables
 
 // Parallelisation Variables
+// Creates workers equal to number of cores on client's machine
+// Domain is divided between each worker for drawing Mb set
+// Data is then collated and pushed to canvas in main thread
+// workerURL variable is used for Django static file handling reasons
 let numCores = window.navigator.hardwareConcurrency;
 let workerArray = new Array(numCores);
 let escapeValMetaArray = new Array(numCores);
@@ -21,12 +25,13 @@ let aspectRatioPreserved = null;
 let rem = parseFloat(window.getComputedStyle(document.getElementById('canvasContainer')).fontSize);
 let useDistanceEstimation = false;
 let displayCoordinates = true;
-
+let escapeValArray;
 
 //Functions
 // Utility Functions
 
 function getColormap(){
+    // Colormaps not defined in this file
     let colormapSelector = document.getElementById('colorMap');
     let colormapString = colormapSelector.options[colormapSelector.selectedIndex].value;
     console.log("get colormap ", colormapString);
@@ -45,7 +50,6 @@ function getCanvasAspectRatio(){
 
 function getAspectRatioPreserved(){
     let aspectRatioSelector = document.getElementById('aspectRatio');
-    // console.log(aspectRatioSelector.checked)
     return aspectRatioSelector.checked
 }
 
@@ -72,76 +76,235 @@ ldBarUpdate = function(e){
     ld.ldBar.set(linesProcessed*100/totalLines);
 }
 
-collateWorkerImageData = function(){
-    console.log("all loops returned, reconstructing image");
-
-let canvas = document.getElementById('drawingCanvas')
-if (canvas.getContext){
-    let lengths = escapeValMetaArray.map( a => a.length);
-    let totalLength = lengths.reduce((a,b) => a+b,0);
-    console.log(totalLength)
-    console.log(escapeValMetaArray);
-    let escapeValArray = new Float32Array(totalLength);
-    let offset = 0;
-    for (let i=0;i<numCores; i++){
-        escapeValArray.set(escapeValMetaArray[i],offset);
-        offset += escapeValMetaArray[i].length;
-        console.log(offset);
+collateWorkerImageData = function(e){
+    console.log(e.data[3])
+    if (e.data[3]){ // should be None if not translating, translationParameters otherwise
+        console.log('collating translation')
+        collateWorkerImageDataTranslate(e.data[3])
     }
-    ctx = canvas.getContext('2d');
-    console.log(escapeValArray);
-    console.log(escapeValMetaArray);
-    let numPixels = escapeValArray.length;
-    let imageDataArray = new Uint8ClampedArray(4*numPixels);
-    let minVal = 10**-15;
-    escapeValArray = escapeValArray.map(x => -Math.log(Math.max(x,minVal)));
-    maxEscapeVal = escapeValArray.reduce(function(a, b) {
-        return Math.max(a, b);
-    });
-    minEscapeVal = escapeValArray.reduce(function(a, b) {
-        return Math.min(a, b);
-    });
-
-    colormap = getColormap();
-    let colormapLength = colormap ? colormap.length : 0;
-
-    for (let i=0; i<numPixels; i++){
-        x = (escapeValArray[i]-minEscapeVal)/(maxEscapeVal-minEscapeVal);
-        if (colormap){
-            let idx = Math.min(Math.floor(colormapLength*x),colormapLength-1);
-            let color = colormap[idx][1];
-
-            imageDataArray[4*i] = Math.floor(255*color[0]);
-            imageDataArray[4*i+1] = Math.floor(255*color[1]);
-            imageDataArray[4*i+2] = Math.floor(255*color[2]);
-            imageDataArray[4*i+3] = 255;                    
-        }
-        else{
-        imageDataArray[4*i] = Math.floor(x*255);
-        imageDataArray[4*i+1] = Math.floor(x*255);
-        imageDataArray[4*i+2] = Math.floor(x*255);
-        imageDataArray[4*i+3] = 250;
-        }
+    else{
+        console.log('collating non-translation')
+        collateWorkerImageDataZoom();
     }
+}
 
-    console.log('images merged')
-    console.log(imageDataArray);
-    convertedData = new ImageData(imageDataArray, canvas.width, canvas.height);
-    console.log(convertedData)
-    ctx.putImageData(convertedData, 0, 0);
-    ld = document.getElementById('ldBar');
-    ld.style.zIndex = 0;
+collateWorkerImageDataTranslate = function(translationParameters){
+    let canvas = document.getElementById('drawingCanvas')
+    if (canvas.getContext){
+        let lengths = escapeValMetaArray.map( a => a.length);
+        let totalLength = lengths.reduce((a,b) => a+b,0);
+
+        let oldEscapeValArray = escapeValArray;
+
+        let newEscapeValArray = new Float32Array(totalLength)
+
+        escapeValArray = new Float32Array(escapeValArray.length);
+
+        let offset = 0;
+        for (let i=0;i<numCores; i++){
+            newEscapeValArray.set(escapeValMetaArray[i],offset);
+            offset += escapeValMetaArray[i].length;
+            console.log(offset);
+        }
+
+        let totalWidth = canvas.width;
+
+        let newWidth = Math.floor(translationParameters.w*translationParameters.scale);
+        
+        let reusedWidth = totalWidth - newWidth;
+
+        let h = canvas.height;
+
+        let totalHeight = canvas.height;
+
+        let newHeight = Math.floor(totalHeight*translationParameters.scale);
+    switch (translationParameters.direction){
+        case 'right':
+
+                for (let j=0; j<h; j++){
+                    for (let i=0;i<totalWidth;i++){
+                        if (i < reusedWidth){
+                            escapeValArray[j*totalWidth+i] = oldEscapeValArray[j*totalWidth+i+newWidth];
+                        }
+                        else{
+                        escapeValArray[j*totalWidth+i] = newEscapeValArray[j*newWidth+i-reusedWidth]  ;
+                        }
+                    }
+                }
+            break;
+ 
+        case 'left':
+
+                for (let j=0; j<h; j++){
+                    for (let i=0;i<totalWidth;i++){
+                        if (i < newWidth){
+                            // escapeValArray[j*totalWidth+i] = oldEscapeValArray[j*totalWidth+i+newWidth] ;
+                            escapeValArray[j*totalWidth+i] = newEscapeValArray[j*newWidth+i]  ;
+                        }
+                        else{
+                            // escapeValArray[j*totalWidth+i] = newEscapeValArray[j*newWidth+i-reusedWidth]  ;
+                            escapeValArray[j*totalWidth+i] = oldEscapeValArray[j*totalWidth+i-newWidth]
+                        }
+                    }
+                }    
+            break;
+        case 'up':
+
+
+
+
+                for (let j=0; j<totalHeight; j++){
+                    for (let i=0;i<totalWidth;i++){
+                        if (j < newHeight){
+                            // escapeValArray[j*totalWidth+i] = oldEscapeValArray[j*totalWidth+i+newWidth] ;
+                            escapeValArray[j*totalWidth+i] = newEscapeValArray[j*totalWidth+i]  ;
+                        }
+                        else{
+                            // escapeValArray[j*totalWidth+i] = newEscapeValArray[j*newWidth+i-reusedWidth]  ;
+                            escapeValArray[j*totalWidth+i] = oldEscapeValArray[(j-newHeight)*totalWidth+i]
+                        }
+                    }
+                }
+    
+
+
+           break;
+
+        case 'down':
+
+
+                for (let j=0; j<totalHeight; j++){
+                    for (let i=0;i<totalWidth;i++){
+                        if (j >= totalHeight - newHeight){
+                            // escapeValArray[j*totalWidth+i] = oldEscapeValArray[j*totalWidth+i+newWidth] ;
+                            escapeValArray[j*totalWidth+i] = newEscapeValArray[(j-totalHeight+newHeight)*totalWidth+i]  ;
+                        }
+                        else{
+                            // escapeValArray[j*totalWidth+i] = newEscapeValArray[j*newWidth+i-reusedWidth]  ;
+                            escapeValArray[j*totalWidth+i] = oldEscapeValArray[(j+newHeight)*totalWidth+i]
+                        }
+                    }
+                }
+    
+                
+
+
+
+           break;
+        }
+        ctx = canvas.getContext('2d');
+        // console.log(escapeValArray);
+        // console.log(escapeValMetaArray);
+        let numPixels = escapeValArray.length;
+        let imageDataArray = new Uint8ClampedArray(4*numPixels);
+        let minVal = 10**-15;
+        let scaledEscapeValArray = escapeValArray.map(x => -Math.log(Math.max(x,minVal)));
+        maxEscapeVal = scaledEscapeValArray.reduce(function(a, b) {
+            return Math.max(a, b);
+        });
+        minEscapeVal = scaledEscapeValArray.reduce(function(a, b) {
+            return Math.min(a, b);
+        });
+
+        console.log("min, max", minEscapeVal, maxEscapeVal)
+
+        colormap = getColormap();
+        let colormapLength = colormap ? colormap.length : 0;
+        for (let i=0; i<numPixels; i++){
+            x = (scaledEscapeValArray[i]-minEscapeVal)/(maxEscapeVal-minEscapeVal);
+            if (colormap){
+                let idx = Math.min(Math.floor(colormapLength*x),colormapLength-1);
+                let color = colormap[idx][1];
+
+                imageDataArray[4*i] = Math.floor(255*color[0]);
+                imageDataArray[4*i+1] = Math.floor(255*color[1]);
+                imageDataArray[4*i+2] = Math.floor(255*color[2]);
+                imageDataArray[4*i+3] = 255;                    
+            }
+            else{
+            imageDataArray[4*i] = Math.floor(x*255);
+            imageDataArray[4*i+1] = Math.floor(x*255);
+            imageDataArray[4*i+2] = Math.floor(x*255);
+            imageDataArray[4*i+3] = 255;
+            }
+        }
+
+        console.log('images merged')
+        console.log(imageDataArray);
+        convertedData = new ImageData(imageDataArray, canvas.width, canvas.height);
+        console.log(convertedData)
+        ctx.putImageData(convertedData, 0, 0);
+        ld = document.getElementById('ldBar');
+        ld.style.zIndex = 0;
+    }
+}
+
+collateWorkerImageDataZoom = function(){
+    let canvas = document.getElementById('drawingCanvas')
+    if (canvas.getContext){
+        let lengths = escapeValMetaArray.map( a => a.length);
+        let totalLength = lengths.reduce((a,b) => a+b,0);
+        escapeValArray = new Float32Array(totalLength);
+        let offset = 0;
+        for (let i=0;i<numCores; i++){
+            escapeValArray.set(escapeValMetaArray[i],offset);
+            offset += escapeValMetaArray[i].length;
+            console.log(offset);
+        }
+        ctx = canvas.getContext('2d');
+        // console.log(escapeValArray);
+        // console.log(escapeValMetaArray);
+        let numPixels = escapeValArray.length;
+        let imageDataArray = new Uint8ClampedArray(4*numPixels);
+        let minVal = 10**-15;
+        let scaledEscapeValArray = escapeValArray.map(x => -Math.log(Math.max(x,minVal)));
+        maxEscapeVal = scaledEscapeValArray.reduce(function(a, b) {
+            return Math.max(a, b);
+        });
+        minEscapeVal = scaledEscapeValArray.reduce(function(a, b) {
+            return Math.min(a, b);
+        });
+
+        colormap = getColormap();
+        let colormapLength = colormap ? colormap.length : 0;
+
+        for (let i=0; i<numPixels; i++){
+            x = (scaledEscapeValArray[i]-minEscapeVal)/(maxEscapeVal-minEscapeVal);
+            if (colormap){
+                let idx = Math.min(Math.floor(colormapLength*x),colormapLength-1);
+                let color = colormap[idx][1];
+
+                imageDataArray[4*i] = Math.floor(255*color[0]);
+                imageDataArray[4*i+1] = Math.floor(255*color[1]);
+                imageDataArray[4*i+2] = Math.floor(255*color[2]);
+                imageDataArray[4*i+3] = 255;                    
+            }
+            else{
+            imageDataArray[4*i] = Math.floor(x*255);
+            imageDataArray[4*i+1] = Math.floor(x*255);
+            imageDataArray[4*i+2] = Math.floor(x*255);
+            imageDataArray[4*i+3] = 255;
+            }
+        }
+
+        console.log('images merged')
+        console.log(imageDataArray);
+        convertedData = new ImageData(imageDataArray, canvas.width, canvas.height);
+        console.log(convertedData)
+        ctx.putImageData(convertedData, 0, 0);
+        ld = document.getElementById('ldBar');
+        ld.style.zIndex = 0;
 }
 }
 
 workerDataProcess = function(e){
     console.log('processing worker output');
-    let i = e.data[1];
-    escapeValMetaArray[i] = e.data[2];
-    workerReturnedArray[i]=1;
-
+    let workerId = e.data[1];
+    escapeValMetaArray[workerId] = e.data[2];
+    workerReturnedArray[workerId]=1;
     if (workerReturnedArray.reduce((a,b) => a+b, 0) == numCores){
-        collateWorkerImageData();
+        console.log("all loops returned, reconstructing image");
+        collateWorkerImageData(e);
     }
 }
     
@@ -159,38 +322,35 @@ workerMessageProcess = function(e){
     }
 }
 
+
+// Workers must be initialised after workerMessageProcess is defined
 for (let i=0; i<numCores; i++) {
     workerArray[i] = new Worker(workerUrl);
     workerArray[i].onmessage = workerMessageProcess;
     workerReturnedArray[i]=0;
 }
 
-
-
-function draw(xmin = -2.5, xmax = 1, ymin = -1.75, ymax = 1.75, scaleFactor=null){
-    // alert('Draw Called')
+function draw(xmin = -2.5, xmax = 1, ymin = -1.75, ymax = 1.75, scaleFactor=null, translationParameters=null){
     let canvas = document.getElementById('drawingCanvas')
     if (canvas.getContext){   
         useDistanceEstimation = getUseDistanceEstimation();
+        scaleFactor =  getScaleFactor();
 
         canvas.style.height = window.innerHeight-3.5*rem + 'px';
         canvas.style.width = window.innerWidth*0.75 + 'px';
 
-        scaleFactor =  getScaleFactor();
-
-        console.log("scale factor", scaleFactor);
-
+        
         canvas.height = (window.innerHeight-3.5*rem)*scaleFactor;
         canvas.width = window.innerWidth*0.75*scaleFactor;
 
-        console.log(0,canvas.style.width, canvas.style.height, canvas.width, 
-            canvas.height, window.innerWidth, window.innerHeight, scaleFactor);
+        // console.log(0,canvas.style.width, canvas.style.height, canvas.width, 
+            // canvas.height, window.innerWidth, window.innerHeight, scaleFactor);
 
         let numPixels = canvas.height*canvas.width;
         let w = canvas.width;
         let h = canvas.height;
         console.log("canvas dimensions:",w,h,w*h,numPixels)
-        let deltay=ymax-ymin;
+        let deltaY=ymax-ymin;
         totalLines=h;
 
         ld = document.getElementById('ldBar');
@@ -202,8 +362,8 @@ function draw(xmin = -2.5, xmax = 1, ymin = -1.75, ymax = 1.75, scaleFactor=null
         for (let i=0; i<numCores; i++){
             console.log('posting message ' + i);
             workerReturnedArray[i]=0;
-            let ymax_worker = ymax - i*deltay/numCores;
-            let ymin_worker = ymax - (i+1)*deltay/numCores;
+            let ymax_worker = ymax - i*deltaY/numCores;
+            let ymin_worker = ymax - (i+1)*deltaY/numCores;
             let h_worker;
             if (i == (numCores-1)) {
                 h_worker = Math.floor(h/numCores) + h%numCores;
@@ -211,14 +371,20 @@ function draw(xmin = -2.5, xmax = 1, ymin = -1.75, ymax = 1.75, scaleFactor=null
             else{
                 h_worker = Math.floor(h/numCores);
             }
-            workerArray[i].postMessage([xmin,xmax,ymin_worker,ymax_worker,w,h_worker,i,useDistanceEstimation]);
+            workerArray[i].postMessage([xmin,xmax,ymin_worker,ymax_worker,w,h_worker,i,useDistanceEstimation, translationParameters]);
         }
 
     }
 }
 
 
+
+
+
+
 function main(){
+    // Sets up selection box behaviour, button behavoir, mouseover behavior
+    // Then calls first draw function
     let ctrlcanvas = document.getElementById('controlCanvas');
     let ctx = ctrlcanvas.getContext('2d');
     let rem = parseFloat(window.getComputedStyle(ctrlcanvas).fontSize);
@@ -234,10 +400,6 @@ function main(){
     ctx.canvas.height = window.innerHeight - 3.5*rem;
 
 
-    ctrlcanvas.onmouseover = function(event){
-
-
-    }
 
     ctrlcanvas.onmousedown = function(event){
         mouseDownX = event.clientX - 0.25*window.innerWidth;
@@ -373,7 +535,7 @@ function main(){
 
                 console.log("xmin/max, ymin/max",xmin, xmax, ymin, ymax);
 
-                draw(xmin, xmax, ymin, ymax,colormap,scaleFactor=2.0);           
+                draw(xmin, xmax, ymin, ymax,colormap);           
             }
         }
         }
@@ -419,9 +581,7 @@ function main(){
         console.log('save button clicked');
         let canvas = document.getElementById('drawingCanvas');
         let img = canvas.toDataURL("image/png");
-        // button.href = img;
-        // window.open(img);
-        var anchor = document.createElement('a');
+        let anchor = document.createElement('a');
         anchor.href = img;
         anchor.target = '_blank';
         anchor.download = "mandelbrot.png";
@@ -430,36 +590,35 @@ function main(){
 
     window.onkeyup = function(event){
         if (event.key == "ArrowRight"){
-            console.log('going right');
-            let deltax = xmax-xmin;
-            let translationFraction = 0.1;
-            xmin += deltax*translationFraction;
-            xmax += deltax*translationFraction;
-            draw(xmin, xmax, ymin, ymax);
+            translate('right', 0.1)
         }
         if (event.key == "ArrowLeft"){
             console.log('going left');
-            let deltax = xmax-xmin;
-            let translationFraction = 0.1;
-            xmin -= deltax*translationFraction;
-            xmax -= deltax*translationFraction;
-            draw(xmin, xmax, ymin, ymax);
+            // let deltax = xmax-xmin;
+            // let translationFraction = 0.1;
+            // xmin -= deltax*translationFraction;
+            // xmax -= deltax*translationFraction;
+            // draw(xmin, xmax, ymin, ymax);
+            translate('left', 0.1)
+
         }
         if (event.key == "ArrowUp"){
             console.log('going up');
-            let deltay = ymax-ymin;
-            let translationFraction = 0.1;
-            ymin += deltay*translationFraction;
-            ymax += deltay*translationFraction;
-            draw(xmin, xmax, ymin, ymax);
+            // let deltay = ymax-ymin;
+            // let translationFraction = 0.1;
+            // ymin += deltay*translationFraction;
+            // ymax += deltay*translationFraction;
+            // draw(xmin, xmax, ymin, ymax);
+            translate('up', 0.1);
         }
         if (event.key == "ArrowDown"){
             console.log('going down');
-            let deltay = ymax-ymin;
-            let translationFraction = 0.1;
-            ymin -= deltay*translationFraction;
-            ymax -= deltay*translationFraction;
-            draw(xmin, xmax, ymin, ymax);
+            // let deltay = ymax-ymin;
+            // let translationFraction = 0.1;
+            // ymin -= deltay*translationFraction;
+            // ymax -= deltay*translationFraction;
+            // draw(xmin, xmax, ymin, ymax);
+            translate('down', 0.1);
         }
     }
 
@@ -468,3 +627,117 @@ function main(){
 
 
 window.onload = main;
+
+
+//TODO add time constraint to this
+// or add hook that prevents this from calling properly until released
+function translate(direction, scale){
+    let canvas = document.getElementById('drawingCanvas')
+    if (canvas.getContext){
+        let ctx = canvas.getContext('2d');
+        h = canvas.height;   
+        w = canvas.width;
+        let translationParameters = {};
+        translationParameters.scale = scale;
+        switch (direction){
+            case 'right':{
+                translationParameters.direction = 'right'
+                let deltax = (xmax-xmin)*translationParameters.scale;
+                translationParameters.deltax = deltax;
+                let xmaxOld = xmax;
+                xmax += deltax;
+                xmin += deltax;
+                drawTranslate(xmaxOld, xmax, ymin, ymax,translationParameters=translationParameters);
+                break;}
+
+            case 'left':{
+                translationParameters.direction = 'left'
+                let deltax = (xmax-xmin)*translationParameters.scale;
+                translationParameters.deltax = deltax;
+                let xminOld = xmin;
+                xmax -= deltax;
+                xmin -= deltax;
+                drawTranslate(xmin, xminOld, ymin, ymax,translationParameters=translationParameters);
+                break;}
+            
+
+            case 'up':{
+                translationParameters.direction = 'up';
+                let deltay = (ymax-ymin)*translationParameters.scale;
+                translationParameters.deltay = deltay;
+                let ymaxOld = ymax;
+                ymax += deltay;
+                ymin += deltay;
+                drawTranslate(xmin,xmax, ymaxOld, ymax, translationParameters);
+                break;
+                }
+
+            case 'down':{
+                translationParameters.direction = 'down';
+                let deltay = (ymax-ymin)*translationParameters.scale;
+                translationParameters.deltay = deltay;
+                let yminOld = ymin;
+                ymin -= deltay;
+                ymax -= deltay;
+                drawTranslate(xmin, xmax, ymin, yminOld, translationParameters);
+                break;  
+            }
+
+        }
+    }
+}
+
+// TODO - write a drawTranslate function that has to figure out how many pixels wide the newly drawn region has to be
+// and also how many pixels in height
+
+
+function drawTranslate(xmin = -2.5, xmax = 1, ymin = -1.75, ymax = 1.75, translationParameters){
+    let canvas = document.getElementById('drawingCanvas')
+    if (canvas.getContext){   
+
+        let w = canvas.width;
+        let h = canvas.height;
+        translationParameters.w=w;
+        translationParameters.h=h;
+        console.log(translationParameters.direction)
+        console.log('right' in ['right'])
+        //this is where the problem seems to be lol
+
+
+        if (translationParameters.direction == 'right' || translationParameters.direction == 'left'){
+            w = Math.floor(w*translationParameters.scale);
+            console.log('qwert')
+
+        }
+        else if (translationParameters.direction == 'up' || translationParameters.direction == 'down'){
+            h = Math.floor(h*translationParameters.scale);
+            console.log('asdfgh')
+        }
+
+
+        let deltaY=ymax-ymin;
+        totalLines=h;
+
+        ld = document.getElementById('ldBar');
+        ld.style.zIndex = 75;
+        ld.ldBar.set(0);
+        linesProcessed=0;
+
+        console.log('posting messages');
+        for (let i=0; i<numCores; i++){
+            console.log('posting message ' + i);
+            workerReturnedArray[i]=0;
+            let ymax_worker = ymax - i*deltaY/numCores;
+            let ymin_worker = ymax - (i+1)*deltaY/numCores;
+            let h_worker;
+            if (i == (numCores-1)) {
+                h_worker = Math.floor(h/numCores) + h%numCores;
+            }
+            else{
+                h_worker = Math.floor(h/numCores);
+            }
+            workerArray[i].postMessage([xmin,xmax,ymin_worker,ymax_worker,w,h_worker,i,useDistanceEstimation, translationParameters]);
+        }
+
+    }
+}

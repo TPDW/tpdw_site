@@ -26,6 +26,7 @@ let rem = parseFloat(window.getComputedStyle(document.getElementById('canvasCont
 let useDistanceEstimation = false;
 let displayCoordinates = true;
 let escapeValArray;
+let currentlyDrawing = false;
 
 //Functions
 // Utility Functions
@@ -236,6 +237,7 @@ collateWorkerImageDataTranslate = function(translationParameters){
         ctx.putImageData(convertedData, 0, 0);
         ld = document.getElementById('ldBar');
         ld.style.zIndex = 0;
+        currentlyDrawing = false;
     }
 }
 
@@ -294,6 +296,8 @@ collateWorkerImageDataZoom = function(){
         ctx.putImageData(convertedData, 0, 0);
         ld = document.getElementById('ldBar');
         ld.style.zIndex = 0;
+        currentlyDrawing = false;
+
 }
 }
 
@@ -332,6 +336,10 @@ for (let i=0; i<numCores; i++) {
 
 function draw(xmin = -2.5, xmax = 1, ymin = -1.75, ymax = 1.75, scaleFactor=null, translationParameters=null){
     let canvas = document.getElementById('drawingCanvas')
+    let hashObject;
+    currentlyDrawing = true;
+    hashObject = {'xmin':xmin, 'xmax':xmax, 'ymin':ymin, 'ymax':ymax}
+    window.location.hash = JSON.stringify(hashObject);
     if (canvas.getContext){   
         useDistanceEstimation = getUseDistanceEstimation();
         scaleFactor =  getScaleFactor();
@@ -694,7 +702,10 @@ function translate(direction, scale){
 function drawTranslate(xmin = -2.5, xmax = 1, ymin = -1.75, ymax = 1.75, translationParameters){
     let canvas = document.getElementById('drawingCanvas')
     if (canvas.getContext){   
-
+        currentlyDrawing = true;    
+        let hashObject;
+        hashObject = {'xmin':xmin, 'xmax':xmax, 'ymin':ymin, 'ymax':ymax}
+        window.location.hash = JSON.stringify(hashObject);
         let w = canvas.width;
         let h = canvas.height;
         translationParameters.w=w;
@@ -739,5 +750,17 @@ function drawTranslate(xmin = -2.5, xmax = 1, ymin = -1.75, ymax = 1.75, transla
             workerArray[i].postMessage([xmin,xmax,ymin_worker,ymax_worker,w,h_worker,i,useDistanceEstimation, translationParameters]);
         }
 
+    }
+}
+
+window.onhashchange = function(){
+    if (!currentlyDrawing){
+    let hashString = window.location.hash;
+    let hashObject = JSON.parse(decodeURIComponent(hashString.slice(1)));
+    xmin = hashObject['xmin'];
+    xmax = hashObject['xmax'];
+    ymin = hashObject['ymin'];
+    ymax = hashObject['ymax'];
+    draw(xmin,xmax,ymin,ymax);
     }
 }

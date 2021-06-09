@@ -1,4 +1,5 @@
 import os
+from django.http import response
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -134,7 +135,7 @@ class index_view_test(TestCase):
         self.assertEqual(response.status_code, 200)
 
 
-class contact_view_text(TestCase):
+class contact_view_test(TestCase):
     def setUp(self):
         settings_manager = override_settings(SECURE_SSL_REDIRECT=False)
         settings_manager.enable()
@@ -146,4 +147,32 @@ class contact_view_text(TestCase):
 
     def test_view_accessible_by_name(self):
         response = self.client.get(reverse('contact'))
+        self.assertEqual(response.status_code, 200)
+
+class mandelbrot_view_test(TestCase):
+    def setUp(self):
+        settings_manager = override_settings(SECURE_SSL_REDIRECT=False)
+        settings_manager.enable()
+        self.addCleanup(settings_manager.disable)
+    
+    def test_view_exists_at_correct_url(self):
+        response = self.client.get('/mandelbrot/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_accessible_by_name(self):
+        response = self.client.get(reverse('mandelbrot'))
+        self.assertEqual(response.status_code, 200)
+
+class mandelbrot_about_view_test(TestCase):
+    def setUp(self):
+        settings_manager = override_settings(SECURE_SSL_REDIRECT=False)
+        settings_manager.enable()
+        self.addCleanup(settings_manager.disable)
+    
+    def test_view_exists_at_correct_url(self):
+        response = self.client.get('/mandelbrot/about')
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_accessible_by_name(self):
+        response = self.client.get(reverse('mandelbrot_about'))
         self.assertEqual(response.status_code, 200)

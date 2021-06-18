@@ -1,3 +1,7 @@
 tpdw/__pycache__/
 mainSite/__pycache/
 *.pyc
+node_modules/
+.eslintrc.json
+package-lock.json
+package.json

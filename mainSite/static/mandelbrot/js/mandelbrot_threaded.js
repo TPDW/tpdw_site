@@ -175,16 +175,22 @@ function collateWorkerImageDataTranslate(translationParameters) {
             }
             break;
         }
+        const useDistanceEstimation = getUseDistanceEstimation();
         const ctx = canvas.getContext('2d');
         const numPixels = escapeValArray.length;
         const imageDataArray = new Uint8ClampedArray(4*numPixels);
         const minVal = 10**-15;
-        const scaledEscapeValArray =
-            escapeValArray.map((x) => -Math.log(Math.max(x, minVal)));
-        maxEscapeVal = scaledEscapeValArray.reduce(function(a, b) {
+        let scaledEscapeValArray;
+        if (useDistanceEstimation) {
+            scaledEscapeValArray = escapeValArray.map((x) =>
+                -Math.log(Math.max(x, minVal)));
+        } else {
+            scaledEscapeValArray = escapeValArray;
+        }
+        const maxEscapeVal = scaledEscapeValArray.reduce(function(a, b) {
             return Math.max(a, b);
         });
-        minEscapeVal = scaledEscapeValArray.reduce(function(a, b) {
+        const minEscapeVal = scaledEscapeValArray.reduce(function(a, b) {
             return Math.min(a, b);
         });
 
@@ -192,7 +198,7 @@ function collateWorkerImageDataTranslate(translationParameters) {
         const colormap = getColormap();
         const colormapLength = colormap ? colormap.length : 0;
         for (let i=0; i<numPixels; i++) {
-            x = (scaledEscapeValArray[i]-minEscapeVal)/(maxEscapeVal-minEscapeVal);
+            const x = (scaledEscapeValArray[i]-minEscapeVal)/(maxEscapeVal-minEscapeVal);
             if (colormap) {
                 const idx = Math.min(Math.floor(colormapLength*x), colormapLength-1);
                 const color = colormap[idx][1];
@@ -209,9 +215,9 @@ function collateWorkerImageDataTranslate(translationParameters) {
             }
         }
 
-        convertedData = new ImageData(imageDataArray, canvas.width, canvas.height);
+        const convertedData = new ImageData(imageDataArray, canvas.width, canvas.height);
         ctx.putImageData(convertedData, 0, 0);
-        ld = document.getElementById('ldBar');
+        const ld = document.getElementById('ldBar');
         ld.style.zIndex = 0;
         currentlyDrawing = false;
     }
@@ -222,6 +228,7 @@ function collateWorkerImageDataZoom() {
     if (canvas.getContext) {
         const lengths = escapeValMetaArray.map( (a) => a.length);
         const totalLength = lengths.reduce((a, b) => a+b, 0);
+        const useDistanceEstimation = getUseDistanceEstimation();
         escapeValArray = new Float32Array(totalLength);
         let offset = 0;
         for (let i=0; i<numCores; i++) {
@@ -232,8 +239,16 @@ function collateWorkerImageDataZoom() {
         const numPixels = escapeValArray.length;
         const imageDataArray = new Uint8ClampedArray(4*numPixels);
         const minVal = 10**-15;
-        const scaledEscapeValArray =
-            escapeValArray.map((x) => -Math.log(Math.max(x, minVal)));
+        // const scaledEscapeValArray =
+        //     escapeValArray.map((x) => -Math.log(Math.max(x, minVal)));
+        let scaledEscapeValArray;
+        if (useDistanceEstimation) {
+            scaledEscapeValArray = escapeValArray.map((x) =>
+                -Math.log(Math.max(x, minVal)));
+        } else {
+            scaledEscapeValArray = escapeValArray;
+        }
+
         const maxEscapeVal = scaledEscapeValArray.reduce(function(a, b) {
             return Math.max(a, b);
         });
@@ -245,7 +260,7 @@ function collateWorkerImageDataZoom() {
         const colormapLength = colormap ? colormap.length : 0;
 
         for (let i=0; i<numPixels; i++) {
-            x = (scaledEscapeValArray[i]-minEscapeVal)/(maxEscapeVal-minEscapeVal);
+            const x = (scaledEscapeValArray[i]-minEscapeVal)/(maxEscapeVal-minEscapeVal);
             if (colormap) {
                 const idx = Math.min(Math.floor(colormapLength*x), colormapLength-1);
                 const color = colormap[idx][1];
@@ -262,9 +277,9 @@ function collateWorkerImageDataZoom() {
             }
         }
 
-        convertedData = new ImageData(imageDataArray, canvas.width, canvas.height);
+        const convertedData = new ImageData(imageDataArray, canvas.width, canvas.height);
         ctx.putImageData(convertedData, 0, 0);
-        ld = document.getElementById('ldBar');
+        const ld = document.getElementById('ldBar');
         ld.style.zIndex = 0;
         currentlyDrawing = false;
     }
@@ -564,13 +579,12 @@ function main() {
 window.onload = main;
 
 
-// TODO add time constraint to this
-// or add hook that prevents this from calling properly until released
 function translate(direction, scale) {
+    if (currentlyDrawing) {
+        return;
+    }
     const canvas = document.getElementById('drawingCanvas');
     if (canvas.getContext) {
-        h = canvas.height;
-        w = canvas.width;
         const translationParameters = {};
         translationParameters.scale = scale;
         switch (direction) {
@@ -625,6 +639,7 @@ function drawTranslate(xmin = -2.5, xmax = 1, ymin = -1.75, ymax = 1.75,
     translationParameters) {
     const canvas = document.getElementById('drawingCanvas');
     if (canvas.getContext) {
+        const useDistanceEstimation = getUseDistanceEstimation();
         currentlyDrawing = true;
         const hashObject = {'xmin': xmin, 'xmax': xmax, 'ymin': ymin, 'ymax': ymax};
         window.location.hash = JSON.stringify(hashObject);
@@ -645,7 +660,7 @@ function drawTranslate(xmin = -2.5, xmax = 1, ymin = -1.75, ymax = 1.75,
         const deltaY=ymax-ymin;
         totalLines=h;
 
-        ld = document.getElementById('ldBar');
+        const ld = document.getElementById('ldBar');
         ld.style.zIndex = 75;
         ld.ldBar.set(0);
         linesProcessed=0;
